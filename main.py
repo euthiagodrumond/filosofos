@@ -7,6 +7,7 @@ from discord.ext import commands
 
 # Configurar a API Gemini com a variável correta
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+print("GOOGLE_API_KEY existe:", bool(os.getenv("GOOGLE_API_KEY")))
 
 # Inicializar o modelo
 model = genai.GenerativeModel("gemini-pro")
