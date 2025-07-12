@@ -1,2 +1,5 @@
 openai>=1.0.0
 discord.py==2.3.2
+transformers==4.41.2
+torch
+accelerate
