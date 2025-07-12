@@ -4,10 +4,9 @@ from datetime import datetime
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-# Escolher o modelo leve gratuito do Hugging Face
-MODEL_NAME = "tiiuae/falcon-rw-1b"  # Pequeno, roda em CPU
+# Modelo melhorado com instruções
+MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.1"
 
-# Carregar modelo e tokenizer
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
 
@@ -19,25 +18,23 @@ with open("philosophers_list.txt", "r", encoding="utf-8") as f:
 today_index = datetime.now().toordinal() % len(philosophers)
 philosopher = philosophers[today_index]
 
-# Prompt reduzido por limitação do modelo
-prompt = f"""
-Escreva um resumo simples e informativo sobre o filósofo {philosopher}.
+# Prompt mais limpo e específico
+prompt = f"""Responda apenas em português. Escreva um parágrafo objetivo e claro sobre o filósofo {philosopher}.
 Inclua:
 - Onde nasceu
 - Quando viveu
 - Principais ideias
-- Obra mais importante
-Texto em português, em parágrafo corrido.
+- Sua obra mais famosa
+
+Não repita palavras e não inclua nenhum conteúdo em inglês. Não use listas. Escreva como se fosse um parágrafo de uma revista de filosofia brasileira.
 """
 
-# Preparar input
-inputs = tokenizer(prompt, return_tensors="pt")
-
-# Gerar saída (em CPU)
+# Gerar resposta
+inputs = tokenizer(prompt, return_tensors="pt", truncation=True)
 with torch.no_grad():
     outputs = model.generate(
         **inputs,
-        max_new_tokens=300,
+        max_new_tokens=400,
         temperature=0.7,
         do_sample=True,
         pad_token_id=tokenizer.eos_token_id
@@ -46,7 +43,10 @@ with torch.no_grad():
 generated = tokenizer.decode(outputs[0], skip_special_tokens=True)
 article = generated.replace(prompt.strip(), "").strip()
 
-# Enviar para o Discord (se configurado)
+# Corta se passar de 1900 caracteres (limite seguro para Discord)
+article = article[:1900]
+
+# Enviar no Discord
 import discord
 from discord.ext import commands
 
