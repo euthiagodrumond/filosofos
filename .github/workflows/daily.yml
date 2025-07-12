@@ -2,7 +2,7 @@ nome: Enviar filófo do dia
 
 em:
  horário:
-    - cron: '0 13 *'0 13 * * *'  # Envia às 10 h da manhã (horário Brasília)
+    - cron: '0 13 *'0 13 * * *' # Envia às 10 h da manhã (horário Brasília)
  fluxo de trabalho_despacho:
 
 empregos:
