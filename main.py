@@ -1,56 +1,58 @@
 import os
 import random
 from datetime import datetime
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from openai import OpenAI
-import discord
-from discord.ext import commands
+# Escolher o modelo leve gratuito do Hugging Face
+MODEL_NAME = "tiiuae/falcon-rw-1b"  # Pequeno, roda em CPU
 
-# Pegando as chaves de ambiente
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+# Carregar modelo e tokenizer
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
 
-# Inicializando o cliente OpenAI
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-# Lendo a lista de filósofos
+# Carregar filósofos
 with open("philosophers_list.txt", "r", encoding="utf-8") as f:
     philosophers = [line.strip() for line in f if line.strip()]
 
-# Selecionar filósofo com base no dia
+# Escolher filósofo do dia
 today_index = datetime.now().toordinal() % len(philosophers)
 philosopher = philosophers[today_index]
 
-# Prompt para o artigo
+# Prompt reduzido por limitação do modelo
 prompt = f"""
-Escreva um artigo completo em português sobre o filósofo {philosopher}.
+Escreva um resumo simples e informativo sobre o filósofo {philosopher}.
 Inclua:
-- Nome, nascimento, morte, classe social, contexto histórico.
-- Como viveu e morreu, onde ensinou ou trabalhou.
-- Estilo de vida, amigos, influências.
-- Corrente filosófica.
-- Teorias principais.
-- Obras (nome, ano, resumo).
-- Seu maior contributo.
-- Conexão com outros filósofos ou divergências importantes.
-Estilo: texto corrido, estilo artigo de revista científica. Título: “{philosopher} e as ideias que formaram a humanidade”.
+- Onde nasceu
+- Quando viveu
+- Principais ideias
+- Obra mais importante
+Texto em português, em parágrafo corrido.
 """
 
-# Fazendo a chamada à API
-response = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": "Você é um historiador e filósofo escrevendo artigos bem estruturados sobre grandes pensadores."},
-        {"role": "user", "content": prompt}
-    ],
-    temperature=0.7
-)
+# Preparar input
+inputs = tokenizer(prompt, return_tensors="pt")
 
-# Pegando o conteúdo gerado
-article = response.choices[0].message.content
+# Gerar saída (em CPU)
+with torch.no_grad():
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=300,
+        temperature=0.7,
+        do_sample=True,
+        pad_token_id=tokenizer.eos_token_id
+    )
 
-# Enviando o texto para o Discord
+generated = tokenizer.decode(outputs[0], skip_special_tokens=True)
+article = generated.replace(prompt.strip(), "").strip()
+
+# Enviar para o Discord (se configurado)
+import discord
+from discord.ext import commands
+
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -58,7 +60,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 async def on_ready():
     channel = bot.get_channel(CHANNEL_ID)
     if channel:
-        await channel.send(article)
+        await channel.send(f"📚 **{philosopher}**\n\n{article}")
     await bot.close()
 
 bot.run(DISCORD_TOKEN)
