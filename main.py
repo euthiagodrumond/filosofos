@@ -1,59 +1,59 @@
-importação os
-importação aleatório
-importação openai
-importação discórdia
-de discórdia.ramal importação comandos
-de datatime importação datatime
+import os
+import random
+import openai
+import discord
+from discord.ext import commands
+from datetime import datetime
 
 # Pegue estas chaves do ambiente
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-CANAL_ID = int(os.getenv("CANAL_ID"))
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
 openai.api_key = OPENAI_API_KEY
 
-# Carrega lista de filhos
-com aberto("filós_list.txt", "r") como f:
- filófos = [linha.tira() para linha em f se linha.tira()]
+# Carrega lista de filósofos
+with open("philosophers_list.txt", "r") as f:
+    philosophers = [line.strip() for line in f if line.strip()]
 
 # Seleciona um filósofo do dia (pode ser aleatório ou pela ordem)
-hoje_índice = datatime.agora().toordinal() % len(filófo)
-filósofo = filósofos[hoje_index]
+today_index = datetime.now().toordinal() % len(philosophers)
+philosopher = philosophers[today_index]
 
-# Prompt para gerar o artigo com base no filossofo
+# Prompt para gerar o artigo com base no filósofo
 prompt = f"""
-Escreva um artigo completo em português sobre o filosofo {filósofo}.
+Escreva um artigo completo em português sobre o filósofo {philosopher}.
 Inclua:
 - Nome, nascimento, morte, classe social, contexto histórico.
 - Como viveu e morreu, onde ensinou ou trabalhou.
 - Estilo de vida, amigos, influências.
-- Corrente filosofia.
+- Corrente filosófica.
 - Teorias principais.
 - Obras (nome, ano, resumo).
-- Seu maior contribuição.
-- Conexão com outros filhos ou divergências importantes.
-Estilo: texto corrido, estilo artigo de revista científica. Título: “{filósofo} e as ideias que formaram a humanidade”.
+- Seu maior contributo.
+- Conexão com outros filósofos ou divergências importantes.
+Estilo: texto corrido, estilo artigo de revista científica. Título: “{philosopher} e as ideias que formaram a humanidade”.
 """
 
-resposta = openai.Conclusão de bate-papo.criar(
- modelo="gpt-4",
- mensagens=[
-        {"papel": "sistema", "conteúdo": "Você é um historiador e filófo escrevendo artigos bem estratos sobre grandes pensadores."},
-        {"papel": "usuário", "conteúdo": alerta}
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": "Você é um historiador e filósofo escrevendo artigos bem estruturados sobre grandes pensadores."},
+        {"role": "user", "content": prompt}
     ],
- temperatura=0,7
+    temperature=0.7
 )
 
-artigo = resposta['escolhas'][0]['mensagem']['conteúdo']
+article = response['choices'][0]['message']['content']
 
-# Envia para o Discórdia
-intenções = discórdia.Intenções.padrão()
-bot = comandos.Bot(comando_prefixo="!", intenções=intenções)
+# Envia para o Discord
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-@bot.evento
-assinc def on_ready():
- canal = bot.obter_canal(CANAL_ID)
- canal aguardar.inviar(artigo)
- aguardar bot.Fechar()
+@bot.event
+async def on_ready():
+    channel = bot.get_channel(CHANNEL_ID)
+    await channel.send(article)
+    await bot.close()
 
-bot.corredor(DISCORD_TOKEN)
+bot.run(DISCORD_TOKEN)
