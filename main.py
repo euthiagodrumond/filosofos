@@ -5,44 +5,43 @@ import google.generativeai as genai
 import discord
 from discord.ext import commands
 
-# Configurar a API Gemini com a variável correta
+# Configurar API Gemini com a chave correta
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-print("GOOGLE_API_KEY existe:", bool(os.getenv("GOOGLE_API_KEY")))
 
-# Inicializar o modelo
-model = genai.GenerativeModel("gemini-pro")
+# Use Gemini 1.5 Flash (mais rápido e gratuito para testes)
+model = genai.GenerativeModel(model_name="models/gemini-1.5-flash-latest")
 
 # Carregar lista de filósofos
 with open("philosophers_list.txt", "r", encoding="utf-8") as f:
     philosophers = [line.strip() for line in f if line.strip()]
 
-# Escolher filósofo com base na data
+# Selecionar filósofo do dia
 today_index = datetime.now().toordinal() % len(philosophers)
 philosopher = philosophers[today_index]
 
-# Criar o prompt detalhado em português
+# Prompt completo
 prompt = f"""
-Escreva um artigo completo em português sobre o filósofo {philosopher}.
+Escreva um artigo completo e objetivo em português sobre o filósofo {philosopher}.
 Inclua:
-- Onde nasceu, quando viveu, se fazia parte da elite ou não
+- Onde nasceu, quando viveu, e classe social
 - Seu contexto histórico e estilo de vida
-- Onde lecionou ou trabalhou
-- Seus amigos, influências e se era aristotélico, cartesiano, etc.
+- Onde lecionou ou atuou
+- Seus amigos e influências filosóficas (ex: aristotélico, cartesiano, etc.)
 - Suas principais teses
-- Obra mais importante (nome, ano, resumo)
+- Obra mais importante (nome, ano e resumo)
 - Contribuição para a humanidade
 - Como morreu
-Estilo: texto corrido, linguagem clara e fluente, como artigo de revista filosófica.
+Use linguagem clara, parágrafos bem escritos, e estilo de revista científica.
 """
 
-# Gerar a resposta com o modelo Gemini
+# Gerar resposta com Gemini 1.5
 response = model.generate_content(prompt)
 article = response.text.strip()
 
-# Garantir que o texto não ultrapasse o limite do Discord
+# Truncar para Discord
 article = article[:1900]
 
-# Inicializar o bot do Discord
+# Enviar para o Discord
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
