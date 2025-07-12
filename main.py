@@ -5,26 +5,23 @@ import google.generativeai as genai
 import discord
 from discord.ext import commands
 
-# Pegar variáveis do ambiente
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+# Configurar a API Gemini com a variável correta
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Configurar modelo do Google
-genai.configure(api_key=GEMINI_API_KEY)
+# Inicializar o modelo
 model = genai.GenerativeModel("gemini-pro")
 
 # Carregar lista de filósofos
 with open("philosophers_list.txt", "r", encoding="utf-8") as f:
     philosophers = [line.strip() for line in f if line.strip()]
 
-# Selecionar filósofo do dia
+# Escolher filósofo com base na data
 today_index = datetime.now().toordinal() % len(philosophers)
 philosopher = philosophers[today_index]
 
-# Prompt completo
+# Criar o prompt detalhado em português
 prompt = f"""
-Escreva um artigo completo e detalhado em português sobre o filósofo {philosopher}.
+Escreva um artigo completo em português sobre o filósofo {philosopher}.
 Inclua:
 - Onde nasceu, quando viveu, se fazia parte da elite ou não
 - Seu contexto histórico e estilo de vida
@@ -34,17 +31,20 @@ Inclua:
 - Obra mais importante (nome, ano, resumo)
 - Contribuição para a humanidade
 - Como morreu
-Use linguagem clara, fluente, e estilo de revista científica.
+Estilo: texto corrido, linguagem clara e fluente, como artigo de revista filosófica.
 """
 
-# Gerar resposta com Gemini
+# Gerar a resposta com o modelo Gemini
 response = model.generate_content(prompt)
 article = response.text.strip()
 
-# Corta se passar do limite de mensagem do Discord (~2000)
+# Garantir que o texto não ultrapasse o limite do Discord
 article = article[:1900]
 
-# Enviar para o Discord
+# Inicializar o bot do Discord
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
