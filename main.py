@@ -39,7 +39,7 @@ Estilo: texto corrido, estilo artigo de revista científica. Título: “{philos
 
 # Fazendo a chamada à API
 response = client.chat.completions.create(
-    model="gpt-3.5-turbo"
+    model="gpt-3.5-turbo",
     messages=[
         {"role": "system", "content": "Você é um historiador e filósofo escrevendo artigos bem estruturados sobre grandes pensadores."},
         {"role": "user", "content": prompt}
